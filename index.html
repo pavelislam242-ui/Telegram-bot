@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cash Pilot</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { --bg:#f6f7fb; --card:#fff; --text:#111827; --muted:#6b7280; --btn:#1877f2; }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Roboto,Arial;background:var(--bg)}
+    .card{background:var(--card);margin:16px;padding:16px;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+    .title{font-weight:700;font-size:20px;margin-bottom:4px;color:var(--text)}
+    .row{display:flex;justify-content:space-between;margin:8px 0;color:var(--text)}
+    .muted{color:var(--muted)}
+    .btn{width:100%;border:0;border-radius:12px;padding:12px 16px;font-weight:700;color:#fff;background:var(--btn)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">Earn Rewards</div>
+    <div class="row"><div>Total Tasks</div><div id="total">80</div></div>
+    <div class="row"><div>Completed</div><div id="done">0</div></div>
+    <div class="row"><div>Remaining</div><div id="left">80</div></div>
+    <button class="btn" id="startBtn" style="margin-top:8px">Start Task ▶</button>
+  </div>
+
+  <div class="card">
+    <div class="title">Daily Tasks</div>
+    <div class="muted">Demo Task — Reward: BDT 0.20</div>
+    <button class="btn" id="earnBtn" style="margin-top:10px">Claim 0.20 BDT</button>
+    <p class="muted" id="status" style="margin-top:8px"></p>
+  </div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+// Get Telegram user id (inside Telegram). Fallback for browser testing with ?user_id=123
+let userId = tg?.initDataUnsafe?.user?.id;
+if (!userId) userId = new URL(location.href).searchParams.get('user_id') || 'test_user';
+
+async function refresh() {
+  const r = await fetch(`/api/balance?user_id=${userId}`);
+  const data = await r.json();
+  document.getElementById('done').textContent = data.tasksDone;
+  document.getElementById('left').textContent = 80 - data.tasksDone;
+  document.getElementById('status').textContent = `Balance: BDT ${Number(data.balance).toFixed(2)}`;
+}
+
+document.getElementById('earnBtn').onclick = async () => {
+  const r = await fetch(`/api/earn?user_id=${userId}`);
+  const data = await r.json();
+  document.getElementById('status').textContent =
+    `+0.20 BDT added. New Balance: BDT ${Number(data.balance).toFixed(2)}`;
+  refresh();
+};
+
+document.getElementById('startBtn').onclick = () => {
+  tg.HapticFeedback?.impactOccurred?.('medium');
+  document.getElementById('status').textContent = 'Task started… complete to claim!';
+};
+
+refresh();
+</script>
+</body>
+</html>
